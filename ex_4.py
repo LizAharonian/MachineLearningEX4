@@ -71,21 +71,25 @@ def train(train_loader,validation_loader,model, optimizer,test_loader):
             loss = F.nll_loss(output,labels)
             loss.backward()
             optimizer.step()
-        validation(model,validation_loader)
+        test(model,validation_loader,"validation set")
+        test(model,train_loader,"train set")
+    test(model,test_loader,"test set")
 
-def validation(model, validation_loader):
+
+def test(model, loader, loader_type):
     model.eval()
     test_loss = 0
     correct = 0
-    for data, target in validation_loader:
+    for data, target in loader:
         output = model(data)
         test_loss += F.nll_loss(output, target, size_average=False).data[0]  # sum up batch loss
         pred = output.data.max(1, keepdim=True)[1]  # get the index of the max log-probability
         correct += pred.eq(target.data.view_as(pred)).cpu().sum()
-    test_loss /= len(validation_loader)
-    print('\nTest set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
-        test_loss, correct, len(validation_loader),
-        100. * correct / len(validation_loader)))
+    test_loss /= len(loader)
+    print('\n'+loader_type+': Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
+        test_loss, correct, len(loader),
+        100. * correct / len(loader)))
+
 
 
 class FirstNet(nn.Module):
