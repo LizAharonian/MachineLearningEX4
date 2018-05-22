@@ -104,7 +104,7 @@ def main():
 
     model = FirstNet(image_size=IMAGESIZE)
     optimizer = optim.SGD(model.parameters(), lr=LEARNRATE)
-    train(train_loader,validation_loader,model,optimizer)
+    train(train_loader,validation_loader,model,optimizer,test_loader)
 
     print "liz"
 
@@ -122,7 +122,10 @@ def main():
     #         # update parameters
     #         self.optimizer.step()
 
-def train(train_loader,validation_loader,model, optimizer):
+
+
+
+def train(train_loader,validation_loader,model, optimizer,test_loader):
     for i in range(EPOCHS):
         print "epoch" +str(i)
         model.train()
@@ -132,12 +135,24 @@ def train(train_loader,validation_loader,model, optimizer):
             loss = F.nll_loss(output,labels)
             loss.backward()
             optimizer.step()
+        validation(model,validation_loader)
+
+def validation(model, validation_loader):
+    model.eval()
+    test_loss = 0
+    correct = 0
+    for data, target in validation_loader:
+        output = model(data)
+        test_loss += F.nll_loss(output, target, size_average=False).data[0]  # sum up batch loss
+        pred = output.data.max(1, keepdim=True)[1]  # get the index of the max log-probability
+        correct += pred.eq(target.data.view_as(pred)).cpu().sum()
+    test_loss /= len(validation_loader)
+    print('\nTest set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
+        test_loss, correct, len(validation_loader),
+        100. * correct / len(validation_loader)))
 
 
 
-
-    #my_obj = Pytorchi()
-    #my_obj.sub()
 
 class Pytorchi(object):
 
