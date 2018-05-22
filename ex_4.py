@@ -6,6 +6,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib.legend_handler import HandlerLine2D
 
 BATCH_SIZE = 1
 IMAGE_SIZE = 28 * 28
@@ -62,6 +64,8 @@ def main():
 
 
 def train(train_loader,validation_loader,model, optimizer,test_loader):
+    dict_train_results = {}
+    dict_val_results = {}
     for i in range(EPOCHS):
         print "epoch" +str(i)
         model.train()
@@ -71,11 +75,16 @@ def train(train_loader,validation_loader,model, optimizer,test_loader):
             loss = F.nll_loss(output,labels)
             loss.backward()
             optimizer.step()
-        test(model,validation_loader,"validation set")
-        test(model,train_loader,"train set")
+        loss = test(model,validation_loader,"validation set")
+        dict_val_results[i+1] = loss
+        loss = test(model,train_loader,"train set")
+        dict_train_results[i+1] = loss
+
     test(model,test_loader,"test set")
-
-
+    label1, = plt.plot(dict_val_results.keys(), dict_val_results.values(), "b-", label='validation loss')
+    label2, = plt.plot(dict_train_results.keys(), dict_train_results.values(), "r-", label='train loss')
+    plt.legend(handler_map={label1: HandlerLine2D(numpoints=4)})
+    plt.show()
 def test(model, loader, loader_type):
     model.eval()
     test_loss = 0
@@ -89,6 +98,7 @@ def test(model, loader, loader_type):
     print('\n'+loader_type+': Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
         test_loss, correct, len(loader),
         100. * correct / len(loader)))
+    return test_loss
 
 
 
