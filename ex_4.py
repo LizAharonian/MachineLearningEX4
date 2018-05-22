@@ -7,7 +7,7 @@ import torch.nn.functional as F
 import torch.optim as optim
 import numpy as np
 
-BATCHSIZE = 1
+BATCH_SIZE = 1
 IMAGESIZE = 28 * 28
 LEARNRATE = 0.005
 EPOCHS = 10
@@ -70,7 +70,7 @@ def main():
 
 
     # Define your batch_size
-    batch_size = 64
+    batch_size = 1
 
     # Random, non-contiguous split
     validation_idx = np.random.choice(indices, size=split, replace=False)
