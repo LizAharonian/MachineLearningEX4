@@ -62,14 +62,29 @@ def main():
     # train(train_loader,validation_loader,model,optimizer,test_loader)
 
     model = ThirdNet(image_size=IMAGE_SIZE)
-    optimizer = optim.SGD(model.parameters(), lr=LEARNRATE)
+    optimizer = optim.Adagrad(model.parameters(), lr=LEARNRATE)
     train(train_loader, validation_loader, model, optimizer, test_loader)
-
+    write_test_pred(test_loader,model)
 
     print "liz"
 
 
+def write_test_pred(loader, best_model):
+    # save test.pred
+    pred_file = open("test.pred", 'w')
+    real_file = open("real.pred", 'w')
+    for data, target in loader:
+        output = best_model(data)
+        pred = output.data.max(1, keepdim=True)[1]
+        print str(pred.item())
+        pred_file.write(str(pred.item()) + "\n")
+        real_file.write(str(target) + "\n")
 
+    pred_file.close()
+    real_file.close()
+
+
+    print "liz"
 
 
 def train(train_loader,validation_loader,model, optimizer,test_loader):
@@ -102,7 +117,7 @@ def test(model, loader, loader_type,batch_size):
     correct = 0
     for data, target in loader:
         output = model(data)
-        test_loss += F.nll_loss(output, target, size_average=False).data[0]  # sum up batch loss
+        test_loss += F.nll_loss(output, target, size_average=False).item()  # sum up batch loss
         pred = output.data.max(1, keepdim=True)[1]  # get the index of the max log-probability
         correct += pred.eq(target.data.view_as(pred)).cpu().sum()
     test_loss /= (len(loader)*batch_size)
