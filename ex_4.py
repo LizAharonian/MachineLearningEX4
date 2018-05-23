@@ -9,12 +9,13 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.legend_handler import HandlerLine2D
 
-BATCH_SIZE = 1
+#BATCH_SIZE = 1
 IMAGE_SIZE = 28 * 28
 LEARNRATE = 0.005
 EPOCHS = 10
 FIRST_HIDDEN_LAYER_SIZE = 100
 SECOND_HIDDEN_LAYER_SIZE = 50
+batch_size =50
 
 
 def main():
@@ -32,7 +33,7 @@ def main():
     indices = list(range(len(train_dataset)))  # start with all the indices in training set
     split = int(len(train_dataset)*0.2)  # define the split size
     # Define your batch_size
-    batch_size = 50
+    #batch_size = 50
 
     # Random, non-contiguous split
     validation_idx = np.random.choice(indices, size=split, replace=False)
@@ -83,19 +84,19 @@ def train(train_loader,validation_loader,model, optimizer,test_loader):
             loss = F.nll_loss(output,labels)
             loss.backward()
             optimizer.step()
-        loss = test(model,validation_loader,"validation set")
+        loss = test(model,validation_loader,"validation set",1)
         dict_val_results[i+1] = loss
-        loss = test(model,train_loader,"train set")
+        loss = test(model,train_loader,"train set",batch_size)
         dict_train_results[i+1] = loss
 
-    test(model,test_loader,"test set")
+    test(model,test_loader,"test set",1)
     #plot the results
     label1, = plt.plot(dict_val_results.keys(), dict_val_results.values(), "b-", label='validation loss')
     label2, = plt.plot(dict_train_results.keys(), dict_train_results.values(), "r-", label='train loss')
     plt.legend(handler_map={label1: HandlerLine2D(numpoints=4)})
     plt.show()
 
-def test(model, loader, loader_type):
+def test(model, loader, loader_type,batch_size):
     model.eval()
     test_loss = 0
     correct = 0
@@ -104,10 +105,10 @@ def test(model, loader, loader_type):
         test_loss += F.nll_loss(output, target, size_average=False).data[0]  # sum up batch loss
         pred = output.data.max(1, keepdim=True)[1]  # get the index of the max log-probability
         correct += pred.eq(target.data.view_as(pred)).cpu().sum()
-    test_loss /= len(loader)
+    test_loss /= (len(loader)*batch_size)
     print('\n'+loader_type+': Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
-        test_loss, correct, len(loader),
-        100. * correct / len(loader)))
+        test_loss, correct, (len(loader)*batch_size),
+        100. * correct / (len(loader)*batch_size)))
     return test_loss
 
 
