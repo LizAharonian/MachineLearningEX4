@@ -32,7 +32,7 @@ def main():
     indices = list(range(len(train_dataset)))  # start with all the indices in training set
     split = int(len(train_dataset)*0.2)  # define the split size
     # Define your batch_size
-    batch_size = 1
+    batch_size = 50
 
     # Random, non-contiguous split
     validation_idx = np.random.choice(indices, size=split, replace=False)
@@ -53,9 +53,17 @@ def main():
                                               batch_size=1,
                                               shuffle=False)
 
-    model = FirstNet(image_size=IMAGE_SIZE)
+    #model = FirstNet(image_size=IMAGE_SIZE)
+    #optimizer = optim.SGD(model.parameters(), lr=LEARNRATE)
+    #train(train_loader,validation_loader,model,optimizer,test_loader)
+    # model = SecondNet(image_size=IMAGE_SIZE)
+    # optimizer = optim.SGD(model.parameters(), lr=LEARNRATE)
+    # train(train_loader,validation_loader,model,optimizer,test_loader)
+
+    model = ThirdNet(image_size=IMAGE_SIZE)
     optimizer = optim.SGD(model.parameters(), lr=LEARNRATE)
-    train(train_loader,validation_loader,model,optimizer,test_loader)
+    train(train_loader, validation_loader, model, optimizer, test_loader)
+
 
     print "liz"
 
@@ -81,10 +89,12 @@ def train(train_loader,validation_loader,model, optimizer,test_loader):
         dict_train_results[i+1] = loss
 
     test(model,test_loader,"test set")
+    #plot the results
     label1, = plt.plot(dict_val_results.keys(), dict_val_results.values(), "b-", label='validation loss')
     label2, = plt.plot(dict_train_results.keys(), dict_train_results.values(), "r-", label='train loss')
     plt.legend(handler_map={label1: HandlerLine2D(numpoints=4)})
     plt.show()
+
 def test(model, loader, loader_type):
     model.eval()
     test_loss = 0
@@ -111,12 +121,64 @@ class FirstNet(nn.Module):
         self.image_size = image_size
         self.fc0 = nn.Linear(image_size, FIRST_HIDDEN_LAYER_SIZE)
         self.fc1 = nn.Linear(FIRST_HIDDEN_LAYER_SIZE, SECOND_HIDDEN_LAYER_SIZE)
+        self.fc2  = nn.Linear(SECOND_HIDDEN_LAYER_SIZE, 10)
+
 
     def forward(self, x):
         x = x.view(-1, self.image_size)
         x = F.relu(self.fc0(x))
-        x = self.fc1(x)
+        x = F.relu(self.fc1(x))
+        x = self.fc2(x)
         return F.log_softmax(x, dim=1)
+
+
+
+
+class SecondNet(nn.Module):
+    FIRST_HIDDEN_LAYER_SIZE = 100
+    SECOND_HIDDEN_LAYER_SIZE = 50
+
+    def __init__(self, image_size):
+        super(SecondNet, self).__init__()
+        self.image_size = image_size
+        self.fc0 = nn.Linear(image_size, FIRST_HIDDEN_LAYER_SIZE)
+        self.fc1 = nn.Linear(FIRST_HIDDEN_LAYER_SIZE, SECOND_HIDDEN_LAYER_SIZE)
+        self.fc2  = nn.Linear(SECOND_HIDDEN_LAYER_SIZE, 10)
+
+
+    def forward(self, x):
+        x = x.view(-1, self.image_size)
+        x = F.relu(self.fc0(x))
+        x = F.dropout(x, training=self.training)
+        x = F.relu(self.fc1(x))
+        x = F.dropout(x, training=self.training)
+        x = self.fc2(x)
+        return F.log_softmax(x, dim=1)
+
+
+class ThirdNet(nn.Module):
+    FIRST_HIDDEN_LAYER_SIZE = 100
+    SECOND_HIDDEN_LAYER_SIZE = 50
+
+    def __init__(self, image_size):
+        super(ThirdNet, self).__init__()
+        self.image_size = image_size
+        self.fc0 = nn.Linear(image_size, FIRST_HIDDEN_LAYER_SIZE)
+        self.fc1 = nn.Linear(FIRST_HIDDEN_LAYER_SIZE, SECOND_HIDDEN_LAYER_SIZE)
+        self.fc2  = nn.Linear(SECOND_HIDDEN_LAYER_SIZE, 10)
+        self.bn1 = nn.BatchNorm1d(FIRST_HIDDEN_LAYER_SIZE)
+        self.bn2 = nn.BatchNorm1d(SECOND_HIDDEN_LAYER_SIZE)
+
+
+
+    def forward(self, x):
+        x = x.view(-1, self.image_size)
+        x = self.bn1(F.relu(self.fc0(x)))
+        x = self.bn2(F.relu(self.fc1(x)))
+        x = self.fc2(x)
+        return F.log_softmax(x, dim=1)
+
+
 
 
 
