@@ -18,7 +18,7 @@ IMAGE_SIZE = 784
 LR = 0.005
 
 # Define your batch_size
-batch_size =1
+batch_size =50
 
 
 def main():
@@ -62,7 +62,7 @@ def main():
                                               batch_size=1,
                                               shuffle=False)
 
-    model = FirstNet(image_size=IMAGE_SIZE)
+    model = ThirdNet(image_size=IMAGE_SIZE)
     optimizer = optim.Adagrad(model.parameters(), lr=LR)
     train(train_loader, validation_loader, model, optimizer, test_loader)
     write_test_pred(model,test_loader)
@@ -140,7 +140,6 @@ def write_test_pred(model, loader):
     """""
     # save test.pred
     pred_file = open("test.pred", 'w')
-    real_file = open("real.pred", 'w')
     model.eval()
     test_loss = 0
     correct = 0
@@ -150,14 +149,12 @@ def write_test_pred(model, loader):
         pred = output.data.max(1, keepdim=True)[1]  # get the index of the max log-probability
         correct += pred.eq(target.data.view_as(pred)).cpu().sum()
         pred_file.write(str(pred.item()) + "\n")
-        real_file.write(str(target) + "\n")
     test_loss /= (len(loader))
     print('\n Test Set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
         test_loss, correct, (len(loader)),
         100. * correct / (len(loader))))
 
     pred_file.close()
-    real_file.close()
 
 
 
