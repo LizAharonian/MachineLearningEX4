@@ -9,16 +9,25 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.legend_handler import HandlerLine2D
 
-#BATCH_SIZE = 1
-IMAGE_SIZE = 28 * 28
-LEARNRATE = 0.005
+
+#global params
 EPOCHS = 10
 FIRST_HIDDEN_LAYER_SIZE = 100
 SECOND_HIDDEN_LAYER_SIZE = 50
-batch_size =50
+IMAGE_SIZE = 784
+LR = 0.005
+
+# Define your batch_size
+batch_size =1
 
 
 def main():
+    """""
+    main function.
+    runs the program.
+    implement of NN.
+
+    """""
     ## Define our MNIST Datasets (Images and Labels) for training and testing
     train_dataset = datasets.FashionMNIST(root='./data',
                                    train=True,
@@ -32,8 +41,7 @@ def main():
     # Define the indices
     indices = list(range(len(train_dataset)))  # start with all the indices in training set
     split = int(len(train_dataset)*0.2)  # define the split size
-    # Define your batch_size
-    #batch_size = 50
+
 
     # Random, non-contiguous split
     validation_idx = np.random.choice(indices, size=split, replace=False)
@@ -54,29 +62,23 @@ def main():
                                               batch_size=1,
                                               shuffle=False)
 
-    #model = FirstNet(image_size=IMAGE_SIZE)
-    #optimizer = optim.SGD(model.parameters(), lr=LEARNRATE)
-    #train(train_loader,validation_loader,model,optimizer,test_loader)
-    # model = SecondNet(image_size=IMAGE_SIZE)
-    # optimizer = optim.SGD(model.parameters(), lr=LEARNRATE)
-    # train(train_loader,validation_loader,model,optimizer,test_loader)
-
-    model = ThirdNet(image_size=IMAGE_SIZE)
-    optimizer = optim.Adagrad(model.parameters(), lr=LEARNRATE)
+    model = FirstNet(image_size=IMAGE_SIZE)
+    optimizer = optim.Adagrad(model.parameters(), lr=LR)
     train(train_loader, validation_loader, model, optimizer, test_loader)
-    write_test_pred(test_loader,model)
-
-    print "liz"
+    write_test_pred(model,test_loader)
 
 
 def write_test_pred(loader, best_model):
+    """""
+    write_test_pred function.
+    runs the nn on the test set.
+    """""
     # save test.pred
     pred_file = open("test.pred", 'w')
     real_file = open("real.pred", 'w')
     for data, target in loader:
         output = best_model(data)
         pred = output.data.max(1, keepdim=True)[1]
-        print str(pred.item())
         pred_file.write(str(pred.item()) + "\n")
         real_file.write(str(target) + "\n")
 
@@ -84,10 +86,11 @@ def write_test_pred(loader, best_model):
     real_file.close()
 
 
-    print "liz"
-
-
 def train(train_loader,validation_loader,model, optimizer,test_loader):
+    """""
+    train function.
+    trains the model and runs the nn on the train and validation loaders.
+    """""
     dict_train_results = {}
     dict_val_results = {}
     for i in range(EPOCHS):
@@ -99,19 +102,22 @@ def train(train_loader,validation_loader,model, optimizer,test_loader):
             loss = F.nll_loss(output,labels)
             loss.backward()
             optimizer.step()
-        loss = test(model,validation_loader,"validation set",1)
+        loss = run_and_print_results(model,validation_loader,"validation set",1)
         dict_val_results[i+1] = loss
-        loss = test(model,train_loader,"train set",batch_size)
+        loss = run_and_print_results(model,train_loader,"train set",batch_size)
         dict_train_results[i+1] = loss
 
-    test(model,test_loader,"test set",1)
     #plot the results
     label1, = plt.plot(dict_val_results.keys(), dict_val_results.values(), "b-", label='validation loss')
     label2, = plt.plot(dict_train_results.keys(), dict_train_results.values(), "r-", label='train loss')
     plt.legend(handler_map={label1: HandlerLine2D(numpoints=4)})
     plt.show()
 
-def test(model, loader, loader_type,batch_size):
+def run_and_print_results(model, loader, loader_type,batch_size):
+    """""
+    run_and_print_results function.
+    apply the nn on the val set and train set.
+    """""
     model.eval()
     test_loss = 0
     correct = 0
@@ -127,12 +133,51 @@ def test(model, loader, loader_type,batch_size):
     return test_loss
 
 
+def write_test_pred(model, loader):
+    """""
+    write_test_pred function.
+    runs the test set and writes the prediction to file.
+    """""
+    # save test.pred
+    pred_file = open("test.pred", 'w')
+    real_file = open("real.pred", 'w')
+    model.eval()
+    test_loss = 0
+    correct = 0
+    for data, target in loader:
+        output = model(data)
+        test_loss += F.nll_loss(output, target, size_average=False).item()  # sum up batch loss
+        pred = output.data.max(1, keepdim=True)[1]  # get the index of the max log-probability
+        correct += pred.eq(target.data.view_as(pred)).cpu().sum()
+        pred_file.write(str(pred.item()) + "\n")
+        real_file.write(str(target) + "\n")
+    test_loss /= (len(loader))
+    print('\n Test Set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
+        test_loss, correct, (len(loader)),
+        100. * correct / (len(loader))))
+
+    pred_file.close()
+    real_file.close()
+
+
 
 class FirstNet(nn.Module):
+    """""
+    FirstNet class.
+    nn of 2 layers.
+    first layer size is 100.
+    second layer size is 50.
+
+    """""
+
     FIRST_HIDDEN_LAYER_SIZE = 100
     SECOND_HIDDEN_LAYER_SIZE = 50
 
     def __init__(self, image_size):
+        """""
+        constructor.
+
+        """""
         super(FirstNet, self).__init__()
         self.image_size = image_size
         self.fc0 = nn.Linear(image_size, FIRST_HIDDEN_LAYER_SIZE)
@@ -141,6 +186,10 @@ class FirstNet(nn.Module):
 
 
     def forward(self, x):
+        """""
+        forward function.
+        calculates the nn params.
+        """""
         x = x.view(-1, self.image_size)
         x = F.relu(self.fc0(x))
         x = F.relu(self.fc1(x))
@@ -151,10 +200,20 @@ class FirstNet(nn.Module):
 
 
 class SecondNet(nn.Module):
+    """""
+    SecondNet nn.
+    same params as FirstNet.
+    including using dropout.
+
+    """""
+
     FIRST_HIDDEN_LAYER_SIZE = 100
     SECOND_HIDDEN_LAYER_SIZE = 50
 
     def __init__(self, image_size):
+        """""
+        constructor.
+        """""
         super(SecondNet, self).__init__()
         self.image_size = image_size
         self.fc0 = nn.Linear(image_size, FIRST_HIDDEN_LAYER_SIZE)
@@ -163,6 +222,11 @@ class SecondNet(nn.Module):
 
 
     def forward(self, x):
+        """""
+        forward function.
+        calculates the nn params.
+        
+        """""
         x = x.view(-1, self.image_size)
         x = F.relu(self.fc0(x))
         x = F.dropout(x, training=self.training)
@@ -173,10 +237,18 @@ class SecondNet(nn.Module):
 
 
 class ThirdNet(nn.Module):
+    """""
+    same as FirstNet.
+    includes batch normalization.
+    """""
+
     FIRST_HIDDEN_LAYER_SIZE = 100
     SECOND_HIDDEN_LAYER_SIZE = 50
 
     def __init__(self, image_size):
+        """""
+        constructor.
+        """""
         super(ThirdNet, self).__init__()
         self.image_size = image_size
         self.fc0 = nn.Linear(image_size, FIRST_HIDDEN_LAYER_SIZE)
@@ -188,6 +260,11 @@ class ThirdNet(nn.Module):
 
 
     def forward(self, x):
+        """""
+        forward function.
+        calculates the nn params.
+
+        """""
         x = x.view(-1, self.image_size)
         x = self.bn1(F.relu(self.fc0(x)))
         x = self.bn2(F.relu(self.fc1(x)))
